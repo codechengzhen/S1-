@@ -1,0 +1,102 @@
+﻿<krpano>
+
+	<!-- krpano 1.19.pr8 - Virtual Tour Skin -->
+
+	<!-- skin events -->
+	<events name="skin_events" keep="true"
+	        onxmlcomplete="set(events[skin_events].onxmlcomplete,null); skin_startup();"
+	        onnewpano="skin_showloading(true); skin_update_scene_infos(); skin_deeplinking_update_url();"
+	        onremovepano="skin_showloading(true);"
+	        onloadcomplete="skin_showloading(false);"
+	        onidle="skin_deeplinking_update_url();"
+	        onresize="skin_onresize();"
+	        onenterfullscreen.fullscreensupport="set(layer[skin_btn_fs].crop, '64|576|64|64');"
+	        onexitfullscreen.fullscreensupport="set(layer[skin_btn_fs].crop, '0|576|64|64');"
+	        onkeydown="skin_keydown_event();"
+	        />
+
+
+	<!-- skin actions -->
+	<action name="skin_startup">
+
+		<!-- apply skin settings on startup -->
+		if(skin_settings.thumbs,
+			if(skin_settings.thumbs_opened, set(layer[skin_thumbs].state,'opened'); set(layer[skin_thumbs_container].visible,true); );
+			copy(layer[skin_thumbs].draggable, skin_settings.thumbs_dragging);
+			if(skin_settings.thumbs_onhoverscrolling AND device.mouse,
+				set(layer[skin_thumbs].draggable, false);
+				set(layer[skin_thumbs].onhover_autoscrolling, true);
+			  );
+		  );
+
+		if(skin_settings.gyro AND !device.desktop AND device.html5,
+			copy(plugin[skin_gyro].url, plugin[skin_gyro].html5_url);
+		  );
+
+		if(skin_settings.webvr AND device.html5 AND device.webgl,
+			copy(plugin[WebVR].url, plugin[WebVR].pluginurl);
+		  );
+
+		if(skin_settings.maps == true,
+			set(layer[skin_btn_map].visible, true);
+
+			if(device.flash,
+				copy(layer[skin_map].key, skin_settings.maps_bing_api_key);
+				set(layer[skin_map].url, '%SWFPATH%/plugins/bingmaps.swf');
+			  ,
+				if(skin_settings.maps_type == 'bing',
+					copy(layer[skin_map].key, skin_settings.maps_bing_api_key);
+					set(layer[skin_map].url, '%SWFPATH%/plugins/bingmaps.js');
+				  ,
+				 	copy(layer[skin_map].key, skin_settings.maps_google_api_key);
+					set(layer[skin_map].url, '%SWFPATH%/plugins/googlemaps.js');
+				  );
+			  );
+		  );
+
+		if(skin_settings.littleplanetintro AND (device.webgl OR device.flash),
+			skin_setup_littleplanetintro();
+		  );
+
+		skin_addthumbs();
+		skin_onresize();
+		skin_updatescroll();
+
+		set(layer[skin_layer].visible, true);
+		set(layer[skin_layer_other].visible, true);
+		set(layer[skin_layer_tly].visible, true);
+	</action>
+
+	<action name="skin_setup_littleplanetintro">
+		copy(lp_scene, xml.scene);
+		copy(lp_hlookat, view.hlookat);
+		copy(lp_vlookat, view.vlookat);
+		set(view.fov,90);
+		copy(lp_fov, view.fov);
+		copy(lp_fovmax, view.fovmax);
+		copy(lp_limitview, view.limitview);
+		set(view.fovmax, 180);
+		set(view.limitview, lookto);
+		set(view.vlookatmin, 90);
+		set(view.vlookatmax, 180);
+		lookat(calc(lp_hlookat - 180), 90, 160, 1, 0, 0);
+		set(events[lp_events].onloadcomplete,
+			delayedcall(0.5,
+				if(lp_scene === xml.scene,
+					set(control.usercontrol, off);
+					copy(view.limitview, lp_limitview);
+					set(view.vlookatmin, null);
+					set(view.vlookatmax, null);
+					tween(view.hlookat|view.vlookat|view.fov|view.distortion, calc('' + lp_hlookat + '|' + lp_vlookat + '|' + lp_fov + '|' + 1.0),
+						3.0, easeOutQuad,
+						set(control.usercontrol, all);
+						tween(view.fovmax, get(lp_fovmax));
+						);
+				  );
+		set(layer[fisheyediv].visible,false);
+		set(layer[littleplanetdiv].visible,true);
+			  );
+		  );
+	</action>
+
+</krpano>

@@ -1,0 +1,383 @@
+﻿<krpano>
+
+	<!--2017.5.23 skin_settings start-->
+	<skin_settings maps="false"
+				   maps_type="google"
+				   maps_bing_api_key=""
+				   maps_google_api_key=""
+				   maps_zoombuttons="false"
+				   gyro="true"
+				   webvr="false"
+				   webvr_gyro_keeplookingdirection="false"
+				   webvr_prev_next_hotspots="true"
+				   littleplanetintro="true"
+				   title="true"
+				   thumbs="true"
+				   thumbs_width="120" thumbs_height="80" thumbs_padding="10" thumbs_crop="0|40|240|160"
+				   thumbs_opened="false"
+				   thumbs_text="false"
+				   thumbs_dragging="true"
+				   thumbs_onhoverscrolling="false"
+				   thumbs_scrollbuttons="false"
+				   thumbs_scrollindicator="false"
+				   thumbs_loop="false"
+				   tooltips_buttons="false"
+				   tooltips_thumbs="false"
+				   tooltips_hotspots="false"
+				   tooltips_mapspots="false"
+				   deeplinking="false"
+				   loadscene_flags="MERGE"
+				   loadscene_blend="OPENBLEND(0.5, 0.0, 0.75, 0.05, linear)"
+				   loadscene_blend_prev="SLIDEBLEND(0.5, 180, 0.75, linear)"
+				   loadscene_blend_next="SLIDEBLEND(0.5,   0, 0.75, linear)"
+				   loadingtext="loading..."
+				   layout_width="100%"
+				   layout_maxwidth="814"
+				   controlbar_width="-24"
+				   controlbar_height="40"
+				   controlbar_offset="20"
+				   controlbar_offset_closed="-40"
+				   controlbar_overlap.no-fractionalscaling="10"
+				   controlbar_overlap.fractionalscaling="0"
+				   design_skin_images="vtourskin.png"
+				   design_bgcolor="0x2D3E50"
+				   design_bgalpha="0.8"
+				   design_bgborder="0"
+				   design_bgroundedge="1"
+				   design_bgshadow="0 4 10 0x000000 0.3"
+				   design_thumbborder_bgborder="3 0xFFFFFF 1.0"
+				   design_thumbborder_padding="2"
+				   design_thumbborder_bgroundedge="0"
+				   design_text_css="color:#FFFFFF; font-family:Arial;"
+				   design_text_shadow="1"
+	/>
+
+	<!--2017.5.23 自动旋转 start-->
+	<autorotate enabled="true" waittime="1.0" speed="10.0" horizon="0.0" />
+
+	<!--2017.5.23  实现小行星开场   start-->
+
+		<!-- skin events -->
+		<events name="skin_events" keep="true"
+				onxmlcomplete="set(events[skin_events].onxmlcomplete,null); skin_startup();"
+				onnewpano="skin_showloading(true); skin_update_scene_infos(); skin_deeplinking_update_url();"
+				onremovepano="skin_showloading(true);"
+				onloadcomplete="skin_showloading(false);"
+				onidle="skin_deeplinking_update_url();"
+				onresize="skin_onresize();"
+				onenterfullscreen.fullscreensupport="set(layer[skin_btn_fs].crop, '64|576|64|64');"
+				onexitfullscreen.fullscreensupport="set(layer[skin_btn_fs].crop, '0|576|64|64');"
+				onkeydown="skin_keydown_event();"
+		/>
+
+
+		<!-- skin actions -->
+		<action name="skin_startup">
+
+			<!-- apply skin settings on startup -->
+			if(skin_settings.thumbs,
+			if(skin_settings.thumbs_opened, set(layer[skin_thumbs].state,'opened'); set(layer[skin_thumbs_container].visible,true); );
+			copy(layer[skin_thumbs].draggable, skin_settings.thumbs_dragging);
+			if(skin_settings.thumbs_onhoverscrolling AND device.mouse,
+			set(layer[skin_thumbs].draggable, false);
+			set(layer[skin_thumbs].onhover_autoscrolling, true);
+			);
+			);
+
+			if(skin_settings.gyro AND !device.desktop AND device.html5,
+			copy(plugin[skin_gyro].url, plugin[skin_gyro].html5_url);
+			);
+
+			if(skin_settings.webvr AND device.html5 AND device.webgl,
+			copy(plugin[WebVR].url, plugin[WebVR].pluginurl);
+			);
+
+			if(skin_settings.maps == true,
+			set(layer[skin_btn_map].visible, true);
+
+			if(device.flash,
+			copy(layer[skin_map].key, skin_settings.maps_bing_api_key);
+			set(layer[skin_map].url, '%SWFPATH%/plugins/bingmaps.swf');
+			,
+			if(skin_settings.maps_type == 'bing',
+			copy(layer[skin_map].key, skin_settings.maps_bing_api_key);
+			set(layer[skin_map].url, '%SWFPATH%/plugins/bingmaps.js');
+			,
+			copy(layer[skin_map].key, skin_settings.maps_google_api_key);
+			set(layer[skin_map].url, '%SWFPATH%/plugins/googlemaps.js');
+			);
+			);
+			);
+
+			if(skin_settings.littleplanetintro AND (device.webgl OR device.flash),
+			skin_setup_littleplanetintro();
+			);
+
+			skin_addthumbs();
+			skin_onresize();
+			skin_updatescroll();
+
+			set(layer[skin_layer].visible, true);
+			set(layer[skin_layer_other].visible, true);
+			set(layer[skin_layer_tly].visible, true);
+		</action>
+
+		<action name="skin_setup_littleplanetintro">
+		copy(lp_scene, xml.scene);
+		copy(lp_hlookat, view.hlookat);
+		copy(lp_vlookat, view.vlookat);
+		set(view.fov,90);
+		copy(lp_fov, view.fov);
+		copy(lp_fovmax, view.fovmax);
+		copy(lp_limitview, view.limitview);
+		set(view.fovmax, 180);
+		set(view.limitview, lookto);
+		set(view.vlookatmin, 90);
+		set(view.vlookatmax, 180);
+		lookat(calc(lp_hlookat - 180), 90, 160, 1, 0, 0);
+		set(events[lp_events].onloadcomplete,
+		delayedcall(0.5,
+		if(lp_scene === xml.scene,
+		set(control.usercontrol, off);
+		copy(view.limitview, lp_limitview);
+		set(view.vlookatmin, null);
+		set(view.vlookatmax, null);
+		tween(view.hlookat|view.vlookat|view.fov|view.distortion, calc('' + lp_hlookat + '|' + lp_vlookat + '|' + lp_fov + '|' + 1.0),
+		3.0, easeOutQuad,
+		set(control.usercontrol, all);
+		tween(view.fovmax, get(lp_fovmax));
+		);
+		);
+		set(layer[fisheyediv].visible,false);
+		set(layer[littleplanetdiv].visible,true);
+		);
+		);
+	</action>
+
+	<!--2017.5.23  实现小行星开场   end-->
+
+
+	<action name="startup" autorun="onstart">
+		if(device.panovideosupport == false,
+			error('Sorry, but panoramic videos are not supported by your current browser!');
+		  ,
+			loadscene(videopano);
+		  );
+		set(layer[view_ball].visible, false);
+		set(layer[counttexta].visible, false);
+		set(layer[counttextc].visible, true);
+		set(layer[gyrobutton_not].visible, false);
+	</action>
+	<plugin name="gyro" devices="html5" keep="true"
+			url="%SWFPATH%/plugins/gyro2.js"
+			enabled="false"
+			camroll="true"
+			friction="0.0"
+			touch_mode="full"
+			sensor_mode="1"
+			softstart="0.5"
+			autocalibration="true"
+			onavailable="calc(layer[gyro].visible, view.vlookatrange == 180);"
+			onunavailable=""
+			onenable=""
+			ondisable=""
+	/>
+	<action name="skin_setup_littleplanetintro">
+		copy(lp_scene, xml.scene);
+		copy(lp_hlookat, view.hlookat);
+		copy(lp_vlookat, view.vlookat);
+		copy(lp_fov, view.fov);
+		copy(lp_fovmax, view.fovmax);
+		copy(lp_limitview, view.limitview);
+		set(view.fovmax, 170);
+		set(view.limitview, lookto);
+		set(view.vlookatmin, 90);
+		set(view.vlookatmax, 90);
+		lookat(calc(lp_hlookat - 180), 90, 150, 1, 0, 0);
+		set(events[lp_events].onloadcomplete,
+			delayedcall(0.5,
+				if(lp_scene === xml.scene,
+					set(control.usercontrol, off);
+					copy(view.limitview, lp_limitview);
+					set(view.vlookatmin, null);
+					set(view.vlookatmax, null);
+					tween(view.hlookat|view.vlookat|view.fov|view.distortion, calc('' + lp_hlookat + '|' + lp_vlookat + '|' + lp_fov + '|' + 0.0),
+					3.0, easeOutQuad,
+					set(control.usercontrol, all);
+					tween(view.fovmax, get(lp_fovmax));
+					);
+				);
+			);
+		);
+	</action>
+	<scene name="videopano">
+
+		<!-- include the videoplayer interface / skin (with VR support) -->
+		<include url="skin/videointerface.xml" />
+
+		<action name="setup_video_controls">
+			<!-- add  items to the control menu of the videointerface skin -->
+			videointerface_addmenuitem(configmenu, vqtitle, 'Select Video Quality', true, videointerface_toggle_configmenu() );
+			videointerface_addmenuitem(configmenu, q1, '',  false, change_video_file(q1, 'video01.mp4|video-1024x512.webm'); );
+			videointerface_addmenuitem(configmenu, q2, '1920x960',  false, change_video_file(q2, 'video01.mp4|video-1920x960.webm'); );
+
+			<!-- select/mark the current video (see the initial videourl attribute) -->
+			if(device.ios,videointerface_selectmenuitem(configmenu, q1);
+			,videointerface_selectmenuitem(configmenu, q2);
+
+			);
+		</action>
+		<action name="videointerface_toggle_configmenu">
+			if(layer[videointerface_configmenu_menu].state == 'closed',
+			if(layer[videointerface_viewmenu_menu].state == 'opened', videointerface_hidemenu(viewmenu) );
+			videointerface_showmenu(configmenu);
+			,
+			videointerface_hidemenu(configmenu);
+			);
+		</action>
+		<action name="hidd_normal">
+			set(layer[normaldiv].visible, true);
+			set(layer[view_ball].visible, false);
+			set(layer[littleplanetdiv].visible, false);
+			set(layer[fisheyediv].visible, false);
+		</action>
+		<action name="hidd_view_ball">
+			set(layer[normaldiv].visible, false);
+			set(layer[view_ball].visible, true);
+			set(layer[littleplanetdiv].visible, false);
+			set(layer[fisheyediv].visible, false);
+		</action>
+		<action name="hidd_littleplanet">
+			set(layer[normaldiv].visible, false);
+			set(layer[view_ball].visible, false);
+			set(layer[littleplanetdiv].visible, true);
+			set(layer[fisheyediv].visible, false);
+		</action>
+		<action name="hidd_fisheye">
+			set(layer[normaldiv].visible, false);
+			set(layer[view_ball].visible, false);
+			set(layer[littleplanetdiv].visible, false);
+			set(layer[fisheyediv].visible, true);
+		</action>
+		<action name="gyor_hidd">
+			set(layer[gyrobutton].visible, false);
+			set(layer[gyrobutton_not].visible, true);
+		</action>
+		<action name="gyornot_hidd">
+			set(layer[gyrobutton].visible, true);
+			set(layer[gyrobutton_not].visible, false);
+		</action>
+
+
+		<!-- include the videoplayer plugin -->
+		<plugin name="video"
+		        url.html5="%SWFPATH%/plugins/videoplayer.js"
+		        url.flash="%SWFPATH%/plugins/videoplayer.swf"
+
+				posterurl.ios=""
+				videourl.ios=""
+
+				posterurl.no-ios=""
+				videourl.no-ios=""
+
+		        pausedonstart="true"
+		        loop="false"
+		        volume="1.0"
+
+		        onloaded="videointerface_setup_interface(get(name));setup_video_controls();add_video_sources();"
+
+		        />
+		<layer name="bottombargw" type="container" bgcolor="0x0000ff" bgalpha="0" align="topright" width="100" height="120" y="10">
+			<layer name="gyrobutton" url="gyor_not.png" scale="0.5" align="centertop" width="130" height="110"
+				   x="3%" y="2%" visible="true"
+				   onclick="switch(plugin[gyro].enabled);gyor_hidd();"
+			/>
+			<layer name="gyrobutton_not" url="hdian01.png" scale="0.5" align="centertop" width="130" height="110"
+				   x="3%" y="2%" visible="true"
+				   onclick="switch(plugin[gyro].enabled);gyornot_hidd();"
+			/>
+
+			<layer name="gyrobutton2" url="hdian02.png" scale="0.5" align="centerbottom" width="130" height="110"
+				   x="3%" y="2%" visible="true"
+				   onclick="webvr.enterVR();"
+			/>
+		</layer>
+
+		<!-- use the videoplayer plugin as panoramic image source -->
+		<layer name="bottombarg" type="container" bgcolor="0x000000" bgalpha="0" align="topleft" width="100" height="14%">
+			 <!--<layer name="gyrobuttong" url="gyroicon.png" scale="0.5" align="right" x="10" visible="true"
+                   onclick="skin_view_littleplanet();"
+            />-->
+			<layer name="normaldiv" url="%SWFPATH%/plugins/textfield.swf" vcenter="true" visible="true" alpha="1"
+				   html="Perspective" autowidth="true" keep="true" autoheight="true" align="leftcenter" x="15" y="0"
+				   padding="10" roundedge="5" state="closed" textshadow="0" textshadowrange="0"
+				   background="true" backgroundcolor="flash" backgroundalpha="0.5" enabled="true"
+				   border="false" bordercolor="0x000000" borderalpha="1.0" borderwidth="1.0"
+				   css="font-family: Verdana; font-size:14px; color:#fff; text-align:center;width:90px;"
+				   onclick="skin_view_ball();hidd_view_ball();"/>
+			<!--<layer name="counttexta" url="%SWFPATH%/plugins/textfield.swf" vcenter="true" visible="true"
+				   alpha="1" html="鱼眼" autowidth="true" keep="true" autoheight="true" align="center" x="5" y="0"
+				   css="font-family: Verdana; font-size:16px; color:#fff; text-align:center; line-height:16px;"
+				   padding="15" roundedge="5" background="false" backgroundcolor="flash" state="closed"
+				   backgroundalpha="1" border="false" enabled="true" bordercolor="0xFFFFFF" borderalpha="1.0" borderwidth="1.0"
+				   onclick="skin_view_fisheye();hidd_fisheye()"/>-->
+			<layer name="view_ball" url="%SWFPATH%/plugins/textfield.swf" vcenter="true" visible="false"
+				   alpha="1" html="Crystal ball" autowidth="true" textshadow="0" keep="true" autoheight="true" align="center" x="20" y="0"
+				   css="font-family: Verdana; font-size:14px; color:#fff; text-align:center;width:90px;"
+				   padding="10" roundedge="5" background="true" backgroundcolor="flash" state="closed"
+				   backgroundalpha="0.5" border="false" enabled="true" bordercolor="0xFFFFFF" borderalpha="1.0" borderwidth="1.0"
+				   onclick="skin_view_littleplanet();hidd_littleplanet();" showif="view.vlookatrange == 180" devices="flash|webgl"/>
+
+			<layer name="littleplanetdiv" url="%SWFPATH%/plugins/textfield.swf" vcenter="true" visible="false"
+				   alpha="1" html="Little Planet" autowidth="true" textshadow="0" keep="true" autoheight="true" align="center" x="20" y="0"
+				   css="font-family: Verdana; font-size:14px; color:#fff; text-align:center;width:90px;"
+				   padding="10" roundedge="5" background="true" backgroundcolor="flash" state="closed"
+				   backgroundalpha="0.5" border="false" enabled="true" bordercolor="0xFFFFFF" borderalpha="1.0" borderwidth="1.0"
+				   onclick="skin_view_fisheye();hidd_fisheye();"/>
+			<!--<layer name="counttext" url="%SWFPATH%/plugins/textfield.swf" vcenter="true" visible="true"
+				   alpha="1" html="小行星" autowidth="true" keep="true" autoheight="true" align="center" x="5" y="0"
+				   css="font-family: Verdana; font-size:16px; color:#fff; text-align:center; line-height:16px;"
+				   padding="15" roundedge="5" background="false" backgroundcolor="flash" state="closed"
+				   backgroundalpha="1" border="false" enabled="true" bordercolor="0xFFFFFF" borderalpha="1.0" borderwidth="1.0"
+				   onclick="skin_view_littleplanet();hidd_littleplanet()"/>-->
+
+
+			<layer name="fisheyediv" url="%SWFPATH%/plugins/textfield.swf" vcenter="true" visible="false"
+				   alpha="1" html="Fish eye" autowidth="true" keep="true" autoheight="true" align="center" x="20" y="0"
+				   css="font-family: Verdana; font-size:14px; color:#fff; text-align:center; width:90px;"
+				   padding="10" roundedge="5" background="true" backgroundcolor="flash" state="closed"
+				   backgroundalpha="0.5" border="false" enabled="true" bordercolor="0xFFFFFF" borderalpha="1.0" borderwidth="1.0"
+				   onclick="skin_view_normal();hidd_normal();"/>
+		</layer>
+
+		<image>
+			<sphere url="plugin:video" />
+		</image>
+
+		<!-- set the default view -->
+		<view hlookat="0" vlookat="0" fovtype="DFOV" fov="130" fovmin="75" fovmax="150" distortion="0.0" />
+
+		<!-- add the video sources and play the video -->
+		<action name="add_video_sources">
+			jsget(vShareImage,"vShareImg");
+			jsget(vShareVideo,"vShareVideo");
+			<!--调试信息-->
+			<!--trace(vShareVideo);-->
+			<!--set(image.sphere.url,get(vShareImage));-->
+			<!--set(vShareImg,get(vShareImage));-->
+
+			if(device.ios,
+				<!-- iOS Safari has a very slow 'video-to-webgl-texture' transfer, therefore use a low-res video by default -->
+
+			playvideo(get(vShareVideo),get(vShareImage))
+			  ,
+				<!--videointerface_play('1920x960');-->
+			playvideo(get(vShareVideo),get(vShareImage))
+			  );
+
+		</action>
+
+
+	</scene>
+
+</krpano>
